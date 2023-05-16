@@ -1,5 +1,5 @@
 module Slack
-  class CreateIncidentModal < ApplicationService
+  class DisplayCreateIncidentModal < ApplicationService
     def initialize(trigger_id, title)
       @trigger_id = trigger_id
       @title = title

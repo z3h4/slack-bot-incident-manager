@@ -4,20 +4,27 @@ module Slack
       payload = JSON.parse(params[:payload], symbolize_names: true)
       return unless payload[:type] == 'view_submission'
 
-      params[:incident] = incident_params(payload.dig(:view, :state, :values))
-      params[:user] = { id: payload.dig(:user, :id), name: payload.dig(:user, :name) }
-      params[:team_id] = payload[:team][:id]
+      case payload.dig(:view, :callback_id)
+      when 'create_incident_modal'
+        params[:incident] = incident_params(payload.dig(:view, :state, :values))
+        params[:user] = { id: payload.dig(:user, :id), name: payload.dig(:user, :name) }
+        params[:team_id] = payload[:team][:id]
 
-      begin
-        Persistence::CreateIncident.call(params)
-        head :ok
-      rescue IncidentManager::Error => e
-        if e.cause.instance_of?(Slack::Web::Api::Errors::NameTaken)
-          render json: name_taken_error_payload
-        else
-          Rails.logger.error("Error creating channel: #{e.message}")
-          #TODO: Maybe push a new view to show the other types of error
+        begin
+          Persistence::CreateIncident.call(params)
+          head :ok
+        rescue IncidentManager::Error => e
+          if e.cause.instance_of?(Slack::Web::Api::Errors::NameTaken)
+            render json: name_taken_error_payload
+          else
+            Rails.logger.error("Error creating channel: #{e.message}")
+            #TODO: Maybe push a new view to show the other types of error
+          end
         end
+      when 'resolve_incident_modal'
+        private_metadata = JSON.parse(payload.dig(:view, :private_metadata), symbolize_names: true)
+        Slack::ResolveIncident.call(private_metadata[:channel_id])
+        head :ok
       end
     end
 

@@ -13,4 +13,8 @@ class Incident < ApplicationRecord
   def resolve!
     update!(resolved_at: DateTime.current)
   end
+
+  def resolved?
+    resolved_at.present?
+  end
 end
