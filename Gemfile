@@ -72,3 +72,7 @@ group :test do
 end
 
 gem "slack-ruby-client", "~> 2.1"
+
+gem "view_component", "~> 3.0"
+
+gem "tailwindcss-rails", "~> 2.0"
