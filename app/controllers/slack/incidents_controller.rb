@@ -1,5 +1,18 @@
 module Slack
   class IncidentsController < BaseController
+    skip_before_action :verify_slack_request, only: [:index]
+    def index
+      # Make pagination
+      incidents = Incident.all.includes(:reporter)
+
+      @incidents = []
+      incidents.each do |incident|
+        resolved_at = incident.resolved_at&.strftime('%B %d, %Y %I:%M:%S %p') || ''
+        @incidents << incident.attributes
+                              .slice('title', 'description', 'severity')
+                              .merge('resolved_at' => resolved_at, 'reporter' => incident.reporter.name)
+      end
+    end
     def create
       payload = JSON.parse(params[:payload], symbolize_names: true)
       return unless payload[:type] == 'view_submission'

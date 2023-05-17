@@ -4,5 +4,7 @@ Rails.application.routes.draw do
   post '/slack/incidents', to: 'slack/incidents#create'
 
   # Defines the root path route ("/")
-  # root "articles#index"
+  scope module: 'slack' do
+    root 'incidents#index'
+  end
 end
