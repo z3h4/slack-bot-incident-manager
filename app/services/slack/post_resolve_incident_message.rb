@@ -6,9 +6,7 @@ module Slack
     end
 
     def call
-      client = Slack::Web::Client.new
-
-      client.chat_postMessage(
+      slack_client.chat_postMessage(
         channel: @channel_id,
         text: "The incident was resolved in #{@message}."
       )

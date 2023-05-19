@@ -6,10 +6,8 @@ module Slack
     end
 
     def call
-      client = Slack::Web::Client.new
-
       # Open the modal
-      client.views_open(
+      slack_client.views_open(
         trigger_id: @trigger_id,
         view: view_payload
       )

@@ -6,8 +6,7 @@ module Slack
     end
 
     def call
-      client = Slack::Web::Client.new
-      client.conversations_setPurpose(channel: @channel_id, purpose: @description)
+      slack_client.conversations_setPurpose(channel: @channel_id, purpose: @description)
     end
   end
 end

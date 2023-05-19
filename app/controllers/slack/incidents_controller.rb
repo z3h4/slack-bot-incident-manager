@@ -17,25 +17,9 @@ module Slack
 
       case payload.dig(:view, :callback_id)
       when 'create_incident_modal'
-        params[:incident] = incident_params(payload.dig(:view, :state, :values))
-        params[:user] = { id: payload.dig(:user, :id), name: payload.dig(:user, :name) }
-        params[:team_id] = payload[:team][:id]
-
-        begin
-          Persistence::CreateIncident.call(params)
-          head :ok
-        rescue IncidentManager::Error => e
-          if e.cause.instance_of?(Slack::Web::Api::Errors::NameTaken)
-            render json: name_taken_error_payload
-          else
-            Rails.logger.error("Error creating channel: #{e.message}")
-            #TODO: Maybe push a new view to show the other types of error
-          end
-        end
+        create_incident(payload)
       when 'resolve_incident_modal'
-        private_metadata = JSON.parse(payload.dig(:view, :private_metadata), symbolize_names: true)
-        Slack::ResolveIncident.call(private_metadata[:channel_id])
-        head :ok
+        resolve_incident(payload)
       end
     end
 
@@ -48,13 +32,38 @@ module Slack
       { title:, description:, severity: }
     end
 
-    def name_taken_error_payload
-      {
-        response_action: 'errors',
-        errors: {
-          title: 'This title is not available. Please enter a new one.'
-        }
-      }
+    def create_incident(payload)
+      @data = extract_data_from_payload(payload)
+      create_new_incident(@data)
+    rescue IncidentManager::Error => e
+      handle_create_incident_error(e)
+    end
+
+    def resolve_incident(payload)
+      private_metadata = JSON.parse(payload.dig(:view, :private_metadata), symbolize_names: true)
+      Slack::ResolveIncident.call(private_metadata[:channel_id])
+      head :ok
+    end
+
+    def handle_create_incident_error(error)
+      if error.cause.instance_of?(Slack::Web::Api::Errors::NameTaken)
+        render json: name_taken_error_payload
+      else
+        Rails.logger.error("Error creating channel: #{error.message}")
+      end
+    end
+
+    def extract_data_from_payload(payload)
+      incident_data = incident_params(payload.dig(:view, :state, :values))
+      user_data = { id: payload.dig(:user, :id), name: payload.dig(:user, :name) }
+      team_id = payload[:team][:id]
+
+      { incident: incident_data, user: user_data, team_id: }
+    end
+
+    def create_new_incident(data)
+      Slack::CreateIncident.call(data)
+      render json: incident_created_modal_payload
     end
 
     def determine_sort_column(sort_column)
@@ -98,6 +107,37 @@ module Slack
       end
 
       @incidents.reverse! if sort_direction == 'desc'
+    end
+
+    def name_taken_error_payload
+      {
+        response_action: 'errors',
+        errors: {
+          title: 'This title is not available. Please enter a new one.'
+        }
+      }
+    end
+
+    def incident_created_modal_payload
+      {
+        response_action: 'update',
+        view: {
+          type: 'modal',
+          title: {
+            type: 'plain_text',
+            text: 'Incident created'
+          },
+          blocks: [
+            {
+              type: 'section',
+              text: {
+                type: 'plain_text',
+                text: "New incident #{@data[:incident][:title]} created"
+              }
+            }
+          ]
+        }
+      }
     end
   end
 end
