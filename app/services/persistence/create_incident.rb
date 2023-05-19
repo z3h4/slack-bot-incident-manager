@@ -8,6 +8,7 @@ module Persistence
       ActiveRecord::Base.transaction do
         find_or_create_user
         response = Slack::CreateChannel.call(@params[:incident][:title], @params[:team_id])
+        Slack::SetChannelDescription.call(response[:channel][:id], @params[:incident][:description])
         Slack::AddUserToChannel.call(@params[:user][:id], response[:channel][:id])
         create_incident(response[:channel][:id])
       end
