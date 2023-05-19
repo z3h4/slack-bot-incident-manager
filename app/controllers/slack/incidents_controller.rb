@@ -1,18 +1,16 @@
 module Slack
   class IncidentsController < BaseController
     skip_before_action :verify_slack_request, only: [:index]
-    def index
-      # Make pagination
-      incidents = Incident.all.includes(:reporter)
 
-      @incidents = []
-      incidents.each do |incident|
-        resolved_at = incident.resolved_at&.strftime('%B %d, %Y %I:%M:%S %p') || ''
-        @incidents << incident.attributes
-                              .slice('title', 'description', 'severity')
-                              .merge('resolved_at' => resolved_at, 'reporter' => incident.reporter.name)
-      end
+    def index
+      sort_column = determine_sort_column(params[:sort_column])
+      sort_direction = determine_sort_direction(params[:sort_direction])
+
+      incidents = fetch_incidents(sort_column, sort_direction)
+      @incidents = build_incident_data(incidents)
+      sort_incidents!(sort_column, sort_direction)
     end
+
     def create
       payload = JSON.parse(params[:payload], symbolize_names: true)
       return unless payload[:type] == 'view_submission'
@@ -57,6 +55,49 @@ module Slack
           title: 'This title is not available. Please enter a new one.'
         }
       }
+    end
+
+    def determine_sort_column(sort_column)
+      allowed_columns = %w[title description severity resolved_at reporter status]
+      allowed_columns.include?(sort_column) ? sort_column : 'title'
+    end
+
+    def determine_sort_direction(sort_direction)
+      %w[asc desc].include?(sort_direction) ? sort_direction : 'asc'
+    end
+
+    def fetch_incidents(sort_column, sort_direction)
+      if %w[reporter status].include?(sort_column)
+        Incident.includes(:reporter)
+      else
+        Incident.includes(:reporter).order(Arel.sql("#{sort_column} #{sort_direction}"))
+      end
+    end
+
+    def build_incident_data(incidents)
+      incidents.map do |incident|
+        resolved_at = incident.resolved_at&.strftime('%B %d, %Y %I:%M:%S %p') || ''
+        incident.attributes
+                .slice('title', 'description', 'severity')
+                .merge(
+                  'resolved_at' => resolved_at,
+                  'reporter' => incident.reporter.name,
+                  'status' => incident.status
+                )
+      end
+    end
+
+    def sort_incidents!(sort_column, sort_direction)
+      return unless %w[reporter status].include?(sort_column)
+
+      case sort_column
+      when 'reporter'
+        @incidents.sort_by! { |incident| incident['reporter'] }
+      when 'status'
+        @incidents.sort_by! { |incident| incident['status'] }
+      end
+
+      @incidents.reverse! if sort_direction == 'desc'
     end
   end
 end

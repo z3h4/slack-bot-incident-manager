@@ -14,6 +14,10 @@ class Incident < ApplicationRecord
     update!(resolved_at: DateTime.current)
   end
 
+  def status
+    resolved_at? ? 'Resolved' : 'Open'
+  end
+
   def resolved?
     resolved_at.present?
   end
