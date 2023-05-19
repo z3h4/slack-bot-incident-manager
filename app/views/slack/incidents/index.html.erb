@@ -1,8 +1,12 @@
 <%= turbo_frame_tag 'table-frame' do %>
-  <%= SortableTableComponent.new(headers: ['Title', 'Description', 'Severity', 'Resolved At', 'Reporter', 'Status'],
-                                 attributes: @incidents&.first.keys,
-                                 data: @incidents,
-                                 sortable: true,
-                                 sort_column: params[:sort_column],
-                                 sort_direction: params[:sort_direction]).call %>
+  <% if @incidents.present? %>
+    <%= SortableTableComponent.new(headers: ['Title', 'Description', 'Severity', 'Resolved At', 'Reporter', 'Status'],
+                                   attributes: @incidents&.first.keys,
+                                   data: @incidents,
+                                   sortable: true,
+                                   sort_column: params[:sort_column],
+                                   sort_direction: params[:sort_direction]).call %>
+  <% else %>
+    <h1>No incidents found. There are currently no incidents to display.</h1>
+  <% end %>
 <% end %>
