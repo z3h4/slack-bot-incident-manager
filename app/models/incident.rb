@@ -7,9 +7,6 @@ class Incident < ApplicationRecord
   validates :channel_id, presence: true
   validates :severity, inclusion: { in: SEVERITY, allow_nil: true }
 
-  scope :open, -> { where(resolved_at: nil) }
-  scope :resolved, -> { where.not(id: open) }
-
   def resolve!
     update!(resolved_at: DateTime.current)
   end
