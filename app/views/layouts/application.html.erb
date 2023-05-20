@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
     <title>SlackBotIncidentManager</title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -12,7 +12,19 @@
   </head>
 
   <body>
-    <main class="container mx-auto mt-28 px-5 flex">
+    <main class="container mx-auto mt-28 px-5">
+      <% if notice.present? %>
+        <div class="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 mb-10" role="alert">
+          <p class="font-bold"><%= notice %></p>
+        </div>
+      <% end %>
+
+      <% if alert.present? %>
+        <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-10" role="alert">
+          <p class="font-bold"><%= alert %></p>
+        </div>
+      <% end %>
+
       <%= yield %>
     </main>
   </body>
