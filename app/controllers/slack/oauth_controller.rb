@@ -2,7 +2,7 @@ module Slack
   class OauthController < ApplicationController
     include HTTParty
 
-    SCOPES = 'chat:write commands groups:write'.freeze
+    SCOPES = 'chat:write commands groups:write users:read'.freeze
 
     def authorize
       redirect_to slack_authorization_url
@@ -11,8 +11,8 @@ module Slack
     def callback
       if params[:code]
         response = Slack::ExchangeCodeForToken.call(slack_credentials, params[:code])
-        access_token = response['access_token']
-        store_access_token(access_token)
+        access_token = response[:access_token]
+        Slack::CreateOrUpdateUser.call(response.dig(:authed_user, :id), access_token)
         redirect_to root_path, notice: 'Slack app installed successfully!'
       else
         redirect_to root_path, alert: 'Failed to install the Slack app.'
@@ -33,10 +33,6 @@ module Slack
 
     def slack_credentials
       Rails.application.credentials[:slack]
-    end
-
-    def store_access_token(access_token)
-      session[:access_token] = access_token
     end
   end
 end

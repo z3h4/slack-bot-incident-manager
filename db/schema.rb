@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_05_14_210508) do
+ActiveRecord::Schema[7.0].define(version: 2023_05_22_233533) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -19,19 +19,21 @@ ActiveRecord::Schema[7.0].define(version: 2023_05_14_210508) do
     t.text "description"
     t.string "severity"
     t.string "channel_id", null: false
-    t.bigint "reporter_id", null: false
+    t.bigint "user_id", null: false
     t.datetime "resolved_at", precision: nil
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["reporter_id"], name: "index_incidents_on_reporter_id"
+    t.index ["user_id"], name: "index_incidents_on_user_id"
   end
 
-  create_table "reporters", force: :cascade do |t|
+  create_table "users", force: :cascade do |t|
     t.string "name"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.string "slack_user_id"
+    t.string "slack_user_id", null: false
+    t.string "team_id", null: false
+    t.string "access_token"
   end
 
-  add_foreign_key "incidents", "reporters"
+  add_foreign_key "incidents", "users"
 end

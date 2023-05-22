@@ -77,9 +77,9 @@ module Slack
 
     def fetch_incidents(sort_column, sort_direction)
       if %w[reporter status].include?(sort_column)
-        Incident.includes(:reporter)
+        Incident.includes(:user)
       else
-        Incident.includes(:reporter).order(Arel.sql("#{sort_column} #{sort_direction}"))
+        Incident.includes(:user).order(Arel.sql("#{sort_column} #{sort_direction}"))
       end
     end
 
@@ -90,7 +90,7 @@ module Slack
                 .slice('title', 'description', 'severity')
                 .merge(
                   'resolved_at' => resolved_at,
-                  'reporter' => incident.reporter.name,
+                  'reporter' => incident.user.name,
                   'status' => incident.status
                 )
       end
