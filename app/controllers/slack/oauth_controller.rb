@@ -1,6 +1,7 @@
 module Slack
   class OauthController < ApplicationController
-    REDIRECT_URI = 'https://324a-2604-3d09-d08b-8f00-1dcb-691d-d5a9-e69e.ngrok-free.app/oauth/callback'.freeze
+    include HTTParty
+
     SCOPES = 'chat:write commands groups:write'.freeze
 
     def authorize
@@ -24,7 +25,7 @@ module Slack
       query_params = {
         client_id: Rails.application.credentials.dig(:slack, :client_id),
         scope: SCOPES,
-        redirect_uri: CGI.escape(REDIRECT_URI)
+        redirect_uri: "https://#{Rails.application.config.oauth_redirect_uri_host}/oauth/callback"
       }
 
       "https://slack.com/oauth/v2/authorize?#{query_params.to_query}"
