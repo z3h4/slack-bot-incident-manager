@@ -89,10 +89,12 @@ module Slack
       return [] if user.nil?
 
       if %w[reporter status].include?(sort_column)
-        user.incidents
+        user.team.incidents
       else
-        user.incidents.order(Arel.sql("#{sort_column} #{sort_direction}"))
+        user.team.incidents.order(Arel.sql("#{sort_column} #{sort_direction}"))
       end
+    rescue ActiveRecord::RecordNotFound
+      []
     end
 
     def build_incident_data(incidents)

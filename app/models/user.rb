@@ -1,5 +1,6 @@
 class User < ApplicationRecord
   has_many :incidents
+  belongs_to :team
 
   validates :name, presence: true
   validates :slack_user_id, presence: true

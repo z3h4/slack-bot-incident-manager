@@ -13,7 +13,10 @@ module Slack
       if user.present?
         update_user_access_token(user)
       else
-        create_user(user_info)
+        ActiveRecord::Base.transaction do
+          team = create_team(user_info[:team_id])
+          create_user(user_info, team)
+        end
       end
     end
 
@@ -31,13 +34,14 @@ module Slack
       GetUserInformation.call(slack_user_id, access_token)
     end
 
-    def create_user(user_info)
-      User.create!(
-        name: user_info[:real_name],
-        slack_user_id: user_info[:id],
-        team_id: user_info[:team_id],
-        access_token:
-      )
+    def create_user(user_info, team)
+      team.users
+          .create_with(name: user_info[:real_name], access_token:)
+          .find_or_create_by(slack_user_id: user_info[:id])
+    end
+
+    def create_team(slack_team_id)
+      Team.find_or_create_by!(slack_team_id:)
     end
   end
 end

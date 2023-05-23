@@ -2,6 +2,7 @@ class Incident < ApplicationRecord
   SEVERITY = %w[sev0 sev1 sev2].freeze
 
   belongs_to :user
+  belongs_to :team
 
   validates :title, presence: true, length: { maximum: 80 }
   validates :channel_id, presence: true

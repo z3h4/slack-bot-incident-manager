@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_05_22_233533) do
+ActiveRecord::Schema[7.0].define(version: 2023_05_23_062601) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -19,11 +19,17 @@ ActiveRecord::Schema[7.0].define(version: 2023_05_22_233533) do
     t.text "description"
     t.string "severity"
     t.string "channel_id", null: false
-    t.bigint "user_id", null: false
     t.datetime "resolved_at", precision: nil
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "user_id"
+    t.bigint "team_id"
+    t.index ["team_id"], name: "index_incidents_on_team_id"
     t.index ["user_id"], name: "index_incidents_on_user_id"
+  end
+
+  create_table "teams", force: :cascade do |t|
+    t.string "slack_team_id", null: false
   end
 
   create_table "users", force: :cascade do |t|
@@ -31,9 +37,12 @@ ActiveRecord::Schema[7.0].define(version: 2023_05_22_233533) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "slack_user_id", null: false
-    t.string "team_id", null: false
     t.string "access_token"
+    t.bigint "team_id"
+    t.index ["team_id"], name: "index_users_on_team_id"
   end
 
+  add_foreign_key "incidents", "teams"
   add_foreign_key "incidents", "users"
+  add_foreign_key "users", "teams"
 end

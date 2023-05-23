@@ -39,8 +39,10 @@ module Slack
     end
 
     def create_incident(channel_id)
-      params[:incident][:channel_id] = channel_id
-      @user.incidents.create!(params[:incident])
+      incident = @user.incidents.build(params[:incident])
+      incident.channel_id = channel_id
+      incident.team_id = @user.team.id
+      incident.save!
     end
   end
 end
