@@ -2,6 +2,7 @@ module Slack
   class CommandsController < BaseController
     def create
       command = params[:text].split.first
+      set_slack_client
 
       case command
       when 'declare'
@@ -15,9 +16,17 @@ module Slack
 
     private
 
+    def set_slack_client
+      @slack_client = Slack::Web::Client.new(token: retrieve_access_token)
+    end
+
+    def retrieve_access_token
+      User.find_by(slack_user_id: params[:user_id]).access_token
+    end
+
     def handle_declare_command
       title = params[:text].split[1..].join(' ')
-      Slack::DisplayCreateIncidentModal.call(params[:trigger_id], title)
+      Slack::DisplayCreateIncidentModal.call(params[:trigger_id], title, @slack_client)
       head :ok
     end
 
@@ -29,7 +38,7 @@ module Slack
       elsif incident.resolved?
         render json: { text: 'This incident has already been resolved' }
       else
-        DisplayResolveIncidentModal.call(params[:trigger_id], params[:channel_id])
+        DisplayResolveIncidentModal.call(params[:trigger_id], params[:channel_id], @slack_client)
       end
     end
 

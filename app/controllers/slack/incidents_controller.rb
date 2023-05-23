@@ -12,18 +12,27 @@ module Slack
     end
 
     def create
-      payload = JSON.parse(params[:payload], symbolize_names: true)
-      return unless payload[:type] == 'view_submission'
+      @payload = JSON.parse(params[:payload], symbolize_names: true)
+      set_slack_client
+      return unless @payload[:type] == 'view_submission'
 
-      case payload.dig(:view, :callback_id)
+      case @payload.dig(:view, :callback_id)
       when 'create_incident_modal'
-        create_incident(payload)
+        create_incident
       when 'resolve_incident_modal'
-        resolve_incident(payload)
+        resolve_incident
       end
     end
 
     private
+
+    def set_slack_client
+      @slack_client = Slack::Web::Client.new(token: retrieve_access_token)
+    end
+
+    def retrieve_access_token
+      User.find_by(slack_user_id: @payload.dig(:user, :id)).access_token
+    end
 
     def incident_params(slack_modal_data)
       title = slack_modal_data.dig(:title, :title, :value)
@@ -32,16 +41,16 @@ module Slack
       { title:, description:, severity: }
     end
 
-    def create_incident(payload)
-      @data = extract_data_from_payload(payload)
+    def create_incident
+      @data = extract_data_from_payload
       create_new_incident(@data)
     rescue IncidentManager::Error => e
       handle_create_incident_error(e)
     end
 
-    def resolve_incident(payload)
-      private_metadata = JSON.parse(payload.dig(:view, :private_metadata), symbolize_names: true)
-      Slack::ResolveIncident.call(private_metadata[:channel_id])
+    def resolve_incident
+      private_metadata = JSON.parse(@payload.dig(:view, :private_metadata), symbolize_names: true)
+      Slack::ResolveIncident.call(private_metadata[:channel_id], @slack_client)
       head :ok
     end
 
@@ -53,16 +62,16 @@ module Slack
       end
     end
 
-    def extract_data_from_payload(payload)
-      incident_data = incident_params(payload.dig(:view, :state, :values))
-      user_data = { id: payload.dig(:user, :id), name: payload.dig(:user, :name) }
-      team_id = payload[:team][:id]
+    def extract_data_from_payload
+      incident_data = incident_params(@payload.dig(:view, :state, :values))
+      slack_user_id = @payload.dig(:user, :id)
+      team_id = @payload.dig(:team, :id)
 
-      { incident: incident_data, user: user_data, team_id: }
+      { incident: incident_data, slack_user_id:, team_id: }
     end
 
     def create_new_incident(data)
-      Slack::CreateIncident.call(data)
+      Slack::CreateIncident.call(data, @slack_client)
       render json: incident_created_modal_payload
     end
 
@@ -76,10 +85,13 @@ module Slack
     end
 
     def fetch_incidents(sort_column, sort_direction)
+      user = User.find(session[:user_id])
+      return [] if user.nil?
+
       if %w[reporter status].include?(sort_column)
-        Incident.includes(:user)
+        user.incidents
       else
-        Incident.includes(:user).order(Arel.sql("#{sort_column} #{sort_direction}"))
+        user.incidents.order(Arel.sql("#{sort_column} #{sort_direction}"))
       end
     end
 

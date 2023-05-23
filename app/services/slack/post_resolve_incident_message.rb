@@ -1,8 +1,11 @@
 module Slack
   class PostResolveIncidentMessage < ApplicationService
-    def initialize(channel_id, message)
+    attr_reader :channel_id, :message, :slack_client
+
+    def initialize(channel_id, message, slack_client)
       @channel_id = channel_id
       @message = message
+      @slack_client = slack_client
     end
 
     def call

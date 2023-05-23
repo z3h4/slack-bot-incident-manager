@@ -13,6 +13,7 @@ module Slack
         response = Slack::ExchangeCodeForToken.call(slack_credentials, params[:code])
         access_token = response[:access_token]
         Slack::CreateOrUpdateUser.call(response.dig(:authed_user, :id), access_token)
+        store_access_token(access_token)
         redirect_to root_path, notice: 'Slack app installed successfully!'
       else
         redirect_to root_path, alert: 'Failed to install the Slack app.'
@@ -33,6 +34,11 @@ module Slack
 
     def slack_credentials
       Rails.application.credentials[:slack]
+    end
+
+    def store_access_token(access_token)
+      user = User.find_by(access_token:)
+      session[:user_id] = user.id
     end
   end
 end

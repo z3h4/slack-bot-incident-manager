@@ -1,14 +1,18 @@
 module Slack
   class DisplayCreateIncidentModal < ApplicationService
-    def initialize(trigger_id, title)
+    attr_reader :title, :trigger_id, :slack_client
+
+    def initialize(trigger_id, title, slack_client)
+      super()
       @trigger_id = trigger_id
       @title = title
+      @slack_client = slack_client
     end
 
     def call
       # Open the modal
       slack_client.views_open(
-        trigger_id: @trigger_id,
+        trigger_id:,
         view: view_payload
       )
     end
@@ -52,7 +56,7 @@ module Slack
         element: {
           type: 'plain_text_input',
           action_id: 'title',
-          initial_value: @title,
+          initial_value: title,
           placeholder: {
             type: 'plain_text',
             text: 'What is the title of the incident?'
@@ -129,4 +133,3 @@ module Slack
     end
   end
 end
-

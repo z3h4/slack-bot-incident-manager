@@ -1,8 +1,12 @@
 module Slack
   class AddUserToChannel < ApplicationService
-    def initialize(user_id, channel_id)
+    attr_reader :user_id, :channel_id, :slack_client
+
+    def initialize(user_id, channel_id, slack_client)
+      super()
       @user_id = user_id
       @channel_id = channel_id
+      @slack_client = slack_client
     end
 
     def call

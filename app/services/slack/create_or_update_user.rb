@@ -3,6 +3,7 @@ module Slack
     attr_reader :slack_user_id, :access_token
 
     def initialize(slack_user_id, access_token)
+      super()
       @slack_user_id = slack_user_id
       @access_token = access_token
     end
@@ -12,7 +13,6 @@ module Slack
       if user.present?
         update_user_access_token(user)
       else
-        user_info = GetUserInformation.call(slack_user_id, access_token)
         create_user(user_info)
       end
     end
@@ -27,12 +27,16 @@ module Slack
       user.update!(access_token:)
     end
 
+    def user_info
+      GetUserInformation.call(slack_user_id, access_token)
+    end
+
     def create_user(user_info)
       User.create!(
         name: user_info[:real_name],
         slack_user_id: user_info[:id],
         team_id: user_info[:team_id],
-        access_token: access_token
+        access_token:
       )
     end
   end

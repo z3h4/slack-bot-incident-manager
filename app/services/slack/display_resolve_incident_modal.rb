@@ -1,14 +1,18 @@
 module Slack
   class DisplayResolveIncidentModal < ApplicationService
-    def initialize(trigger_id, channel_id)
+    attr_reader :trigger_id, :channel_id, :slack_client
+
+    def initialize(trigger_id, channel_id, slack_client)
+      super()
       @trigger_id = trigger_id
       @channel_id = channel_id
+      @slack_client = slack_client
     end
 
     def call
       # Open the modal
       slack_client.views_open(
-        trigger_id: @trigger_id,
+        trigger_id:,
         view: view_payload
       )
     end
@@ -16,7 +20,7 @@ module Slack
     private
 
     def private_metadata
-      { channel_id: @channel_id }
+      { channel_id: }
     end
 
     def view_payload
@@ -40,7 +44,7 @@ module Slack
             type: 'section',
             text: {
               type: 'plain_text',
-              text: 'Would you like to resolve this incident?',
+              text: 'Would you like to resolve this incident?'
             }
           }
         ],
